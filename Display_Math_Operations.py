@@ -134,7 +134,7 @@ def dmo(*exprs,**kwarg): #Display math operation
     if(len(exprs) >= 1):
         expr = exprs[0] #ignore others.
         namestr=str(search_ipython_globals(expr)[0])
-        if (namestr==''):
+        if (namestr=='') or (namestr==str(expr)):
             display(HTML('$$'+sp.latex(expr)+'$$'))
         else:
             display(HTML('$$'+sp.latex(namestr)+'='+sp.latex(expr)+'$$'))
