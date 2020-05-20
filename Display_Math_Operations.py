@@ -1,6 +1,10 @@
 """
 __Display Math Operations (DMO)__
 
+author: Jonathan Gutow <gutow@uwosh.edu>
+date: May 2020
+license: GPL V3+
+
 Easy way(s) to get pretty math output in Jupyter notebooks. Defines a wrapper function to get nice
 typesetting of math operations. Overrides most sympy functions to generate typesetting of math operations
 , not just results. There is an option to make the typesetting automatic.
