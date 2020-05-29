@@ -137,7 +137,7 @@ def dmo(*exprs,**kwarg): #Display math operation
         if (namestr=='') or (namestr==str(expr)):
             display(HTML('$$'+sp.latex(expr)+'$$'))
         else:
-            display(HTML('$$'+sp.latex(namestr)+'\equiv'+sp.latex(expr)+'$$'))
+            display(HTML('$$'+sp.latex(namestr)+'\equiv '+sp.latex(expr)+'$$'))
     else:
         key = list(kwarg)[0] #ignore all but first.
         exprstr=str(kwarg[key])
@@ -146,7 +146,7 @@ def dmo(*exprs,**kwarg): #Display math operation
         ltop=''
         if not(exprstr==str(expr)):# Trying to get the expression without substitution/evaluation
             ltop=sp.latex(exprstr)+'='
-        display(HTML('$$'+(key)+'='+ltop+sp.latex(expr)+'$$'))
+        display(HTML('$$'+(key)+'\equiv '+ltop+sp.latex(expr)+'$$'))
         get_ipython_globals()[key]=expr #inject into namespace.
     get_ipython_globals()['_']=expr #inject into last result
     if (code):
