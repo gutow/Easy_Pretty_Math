@@ -137,7 +137,7 @@ def dmo(*exprs,**kwarg): #Display math operation
         if (namestr=='') or (namestr==str(expr)):
             display(HTML('$$'+sp.latex(expr)+'$$'))
         else:
-            display(HTML('$$'+sp.latex(namestr)+'='+sp.latex(expr)+'$$'))
+            display(HTML('$$'+sp.latex(namestr)+'\equiv'+sp.latex(expr)+'$$'))
     else:
         key = list(kwarg)[0] #ignore all but first.
         exprstr=str(kwarg[key])
