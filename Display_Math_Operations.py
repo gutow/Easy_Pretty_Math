@@ -15,14 +15,17 @@ The utility functions are:
 
 * `dmo_auto()`: Calling this function causes dmo aware functions (most sympy functions plus `diff(expr)` and `integ(expr)`)
 to display a typeset version of the operations carried out by the function. The call `dmo_auto(status=False)` turns this off.
-* `dmo()`: Passing a valid sympy expression or assignment statement to this function causes the expression or assignment to be evaluated and the operation output as typeset math. Also takes the optional argument `code=True`, causing it to try to output the result of the operation as plain code as well. This will just yield another typeset version of the result if `sympy.init_printing(pretty_print=True)` is set rather than `sympy.init_printing(pretty_print=False)`.
+* `dmo()`: Passing a valid sympy expression or assignment statement to this function causes the expression or assignment to be evaluated and the operation output as typeset math. Also takes the optional argument `code=True`, causing it to try to output the result of the operation as plain code as well. This will just yield another typeset version of the result if `init_printing(pretty_print=True)` is set rather than `init_printing(pretty_print=False)`.
 
 _To suppress the display of typeset operations pass `display_op=False` to an operation or function._
 
 __Examples__
 
 ```
->>>from Display_Math_Operations import *
+>>>from Display_Math_Operations import * #Loads DMO and sympy into the global namespace
+    Algebraic equations and Sympy successfully imported.
+    Automatic typesetting of output disabled so output code can be copied into code cells.
+      To enable automatic typesetting of output issue the command `init_printing(pretty_print=True)`.
     Automatic display of math operation activated for `dmo aware` operations.
 >>>sp.var('a b c')
 >>>t=a-b/c
@@ -34,24 +37,55 @@ __Examples__
     will output a typeset version of sin(t)=sin(a - b/c)
 ```
 
-_If a sympy function cannot be called by its name, then it has not been extended and must be called using the syntax
-`sp.funcname` (e.g. `sp.Min(*args)`)_
-
 ```
 >>>integ(t,c)
     will output a typeset version of integral(t wrt c) = integral((a-b/c) wrt c) = a*c - b*log(c)
->>>diff(t,c)
+>>>diffdmo(t,c)
     will output a typeset version of derivative(t wrt c) = derivative((a-b/c) wrt c) = b/c**2
 ```
 
-_`integ()` and `diff()` are the only two dmo aware operations so far._
+_`integ()` and `diffdmo()` are the only two dmo aware operations so far._
 
 __This automated operation display will only work inside a Jupyter or IPython environment__
 """
-
-import sympy as sp
+try:
+    from algebraic_equation import *
+    print('Algebraic equations and Sympy successfully imported.')
+except ImportError:
+    from sympy import *
+    print('WARNING: unable to import algebraic_equation. Defaulting to just Sympy.')
+    print('Sympy successfully imported.')
 from IPython.display import HTML
 import inspect
+
+def get_ipython_depth():
+    is_not_ipython_global=True
+    frame =inspect.currentframe()
+    global_dict=frame.f_globals
+    try:
+        namestr=global_dict['__name__']
+        docstr=global_dict['__doc__']
+    except KeyError:
+        namestr=''
+    if (namestr=='__main__') and (docstr =='Automatically created module for IPython interactive environment'):
+        is_not_ipython_global=False
+    depth = 0
+    try:
+        while (is_not_ipython_global):
+            nextframe = frame.f_back
+            frame=nextframe
+            depth+=1
+            try:
+                global_dict=frame.f_globals
+                namestr=global_dict['__name__']
+                docstr=global_dict['__doc__']
+            except KeyError:
+                namestr=''
+            if (namestr=='__main__') and (docstr =='Automatically created module for IPython interactive environment'):
+                is_not_ipython_global=False
+    except AttributeError:
+        raise AttributeError('Unable to find `__main__` of interactive session. Are you running in Jupyter or IPython?')
+    return depth
 
 def get_ipython_globals():
     is_not_ipython_global=True
@@ -66,10 +100,12 @@ def get_ipython_globals():
         namestr=''
     if (namestr=='__main__') and (docstr =='Automatically created module for IPython interactive environment'):
         is_not_ipython_global=False
+    depth = 0
     try:
         while (is_not_ipython_global):
             nextframe = frame.f_back
             frame=nextframe
+            depth+=1
             try:
                 global_dict=frame.f_globals
                 namestr=global_dict['__name__']
@@ -135,9 +171,9 @@ def dmo(*exprs,**kwarg): #Display math operation
         expr = exprs[0] #ignore others.
         namestr=str(search_ipython_globals(expr)[0])
         if (namestr=='') or (namestr==str(expr)):
-            display(HTML('$$'+sp.latex(expr)+'$$'))
+            display(HTML('$$'+latex(expr)+'$$'))
         else:
-            display(HTML('$$'+sp.latex(namestr)+'\equiv '+sp.latex(expr)+'$$'))
+            display(HTML('$$'+latex(namestr)+'\equiv '+latex(expr)+'$$'))
     else:
         key = list(kwarg)[0] #ignore all but first.
         exprstr=str(kwarg[key])
@@ -145,21 +181,22 @@ def dmo(*exprs,**kwarg): #Display math operation
         #print('string:'+exprstr+' expression:'+str(expr))
         ltop=''
         if not(exprstr==str(expr)):# Trying to get the expression without substitution/evaluation
-            ltop=sp.latex(exprstr)+'='
-        display(HTML('$$'+(key)+'\equiv '+ltop+sp.latex(expr)+'$$'))
+            ltop=latex(exprstr)+'='
+        display(HTML('$$'+(key)+'\equiv '+ltop+latex(expr)+'$$'))
         get_ipython_globals()[key]=expr #inject into namespace.
-    get_ipython_globals()['_']=expr #inject into last result
+    # get_ipython_globals()['_']=expr #inject into last result messes with IPython.
     if (code):
         return(expr)
     pass
 
-class Function(sp.Function):
+class Function(Function):
     def __new__(cls, *arg, **kwargs):
-        # really need to plug into the function base class  where it decides what to do.
         display_op=kwargs.pop('display_op',None) # For getting nice display from bare function.
         try:
             dmo_auto = get_ipython_globals()['_dmo_auto_']
         except KeyError:
+            dmo_auto=False
+        if (get_ipython_depth() > 2):
             dmo_auto=False
         if (display_op==False): #force overide of dmo_auto
             dmo_auto=False
@@ -182,16 +219,16 @@ class Function(sp.Function):
                 showoper1=True
         if (showoper1):
             oper1=super().__new__(cls, *namestr, **kwargs)
-            ltop1=sp.latex(oper1)+'='
+            ltop1=latex(oper1)+'='
         oper=super().__new__(cls, *arg, **kwargs)
         ltoper=''
         if not(oper==result):
-            ltoper=sp.latex(oper)+'='            
-        display(HTML('$$'+ltop1+ltoper+sp.latex(result)+'$$'))
+            ltoper=latex(oper)+'='            
+        display(HTML('$$'+ltop1+ltoper+latex(result)+'$$'))
         
 
-for func in sp.functions.__all__:
-    execstr = 'class '+str(func)+'(Function, sp.'+str(func)+'):\n    pass\n'
+for func in functions.__all__:
+    execstr = 'class '+str(func)+'(Function, '+str(func)+'):\n    pass\n'
     #print(execstr)
     # listed in `skip` cannot be extended because of `mro` error or `metaclass conflict`.
     skip=['sqrt','root','Min','Max','Id','real_root','cbrt','unbranched_argument','polarify','unpolarify',
@@ -214,7 +251,7 @@ def integ(f, *args, **kwargs):
 
     '''
     display_op=kwargs.pop('display_op',None) # For getting nice display from bare function.
-    result=sp.integrate(f,*args,**kwargs)
+    result=integrate(f,*args,**kwargs)
     try:
         dmo_auto = get_ipython_globals()['_dmo_auto_']
     except KeyError:
@@ -226,15 +263,15 @@ def integ(f, *args, **kwargs):
         namestr=str(search_ipython_globals(f)[0])
         ltop1=''
         if not(namestr==''):
-            oper1=sp.Integral(namestr,*args,**kwargs)
-            ltop1=sp.latex(oper1)+'='
-        oper=sp.Integral(f,*args,**kwargs)
+            oper1=Integral(namestr,*args,**kwargs)
+            ltop1=latex(oper1)+'='
+        oper=Integral(f,*args,**kwargs)
         # TODO show subtraction step in computing integrals with limits
         #      question: best way to represent this for multiple integrals?
-        display(HTML('$$'+ltop1+sp.latex(oper)+'='+sp.latex(result)+'$$'))
+        display(HTML('$$'+ltop1+latex(oper)+'='+latex(result)+'$$'))
     return(result)
 
-def diff(f,*symbols,**kwargs):
+def diffdmo(f,*symbols,**kwargs):
     '''
     Wrapper for sympy.diff(). That can output typeset expressions for the operations carried out before
     returning the result. Designed primarily for teaching and display purposes.
@@ -260,7 +297,7 @@ def diff(f,*symbols,**kwargs):
         return(syms,pwrs)
 
     display_op=kwargs.pop('display_op',None) # For getting nice display from bare function.
-    result=sp.diff(f,*symbols,**kwargs)
+    result=diff(f,*symbols,**kwargs)
     try:
         dmo_auto = get_ipython_globals()['_dmo_auto_']
     except KeyError:
@@ -286,13 +323,13 @@ def diff(f,*symbols,**kwargs):
             ltdenom+='\\partial '+str(syms[i])+'^{'+pwrstr+'} '
         if (namestr=='') or (namestr==str(f)):
             ltnum='\\partial^{'+totpwrstr+'} '
-            ltop='\\frac{'+ltnum+'}{'+ltdenom+'}{\\left('+sp.latex(f)+'\\right)}'
+            ltop='\\frac{'+ltnum+'}{'+ltdenom+'}{\\left('+latex(f)+'\\right)}'
         else:
             ltnum ='\\partial^{'+totpwrstr+'}'+str(namestr)+' '
             ltop ='\\frac{'+ltnum+'}{'+ltdenom+'}='
             ltnum='\\partial^{'+totpwrstr+'} '
-            ltop+='\\frac{'+ltnum+'}{'+ltdenom+'}{\\left('+sp.latex(f)+'\\right)}'
-        display(HTML('$$'+ltop+'='+sp.latex(result)+'$$'))
+            ltop+='\\frac{'+ltnum+'}{'+ltdenom+'}{\\left('+latex(f)+'\\right)}'
+        display(HTML('$$'+ltop+'='+latex(result)+'$$'))
     return(result)
 
 
@@ -331,8 +368,8 @@ def diff(f, *args, **kwargs):
     return(result)
 """
 # Turning off sympy auto pretty printing as that seems to be the default in latest Jupyter/Sympy.
-sp.init_printing(pretty_print=False)
+init_printing(pretty_print=False)
 print('Automatic typesetting of output disabled so output code can be copied into code cells.')
-print('    To enable automatic typesetting of output issue the command `sp.init_printing(pretty_print=True)`.')
+print('    To enable automatic typesetting of output issue the command `init_printing(pretty_print=True)`.')
 # Turning on auto display math operations
 dmo_auto()
