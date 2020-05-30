@@ -263,12 +263,15 @@ def integ(f, *args, **kwargs):
         namestr=str(search_ipython_globals(f)[0])
         ltop1=''
         if not(namestr==''):
-            oper1=Integral(namestr,*args,**kwargs)
+            oper1=Integral(namestr,*args)
             ltop1=latex(oper1)+'='
         oper=Integral(f,*args,**kwargs)
+        ltop=''
+        if not(oper==oper1) and not(oper==result):
+            ltop=latex(oper)+'='
         # TODO show subtraction step in computing integrals with limits
         #      question: best way to represent this for multiple integrals?
-        display(HTML('$$'+ltop1+latex(oper)+'='+latex(result)+'$$'))
+        display(HTML('$$'+ltop1+ltop+latex(result)+'$$'))
     return(result)
 
 def diffdmo(f,*symbols,**kwargs):
