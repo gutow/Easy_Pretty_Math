@@ -10,7 +10,7 @@ typesetting of math operations. Overrides most sympy functions to generate types
 
 This is intended mostly to aid with teaching students, who often have difficulty translating code into the symbolic math operations they are used to.
 
-If the file `algebraic_equations.py` is available this will also import and play nice with equations as defined in that
+If the file `algebraic_equations.py` is available `DMO` will also import and play nice with equations as defined in that
 file.
 
 The utility functions are:
